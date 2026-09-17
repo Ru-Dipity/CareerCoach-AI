@@ -1,0 +1,8 @@
+logs/
+venv/
+.env
+study_buddy_ai.egg-info/
+results/
+.trae/
+.venv/
+__pycache__/

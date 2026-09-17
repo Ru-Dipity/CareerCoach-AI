@@ -1,0 +1,33 @@
+# Git version control
+.git
+.gitignore
+
+# Environment variables & secrets (CRITICAL)
+.env
+*.env
+.env.*
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+
+# Local virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Output & temporary data
+results/
+logs/
+*.csv
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+*.egg-info/
