@@ -48,14 +48,18 @@ fill_blank_prompt_template = PromptTemplate(
 
 skill_extraction_prompt_template = PromptTemplate(
     template=(
-        "You are a careful recruiter assistant extracting structured skills from a job posting.\n\n"
+        "You are an expert talent evaluation specialist and recruiter extracting structured skills from a job posting.\n\n"
         "Instructions:\n"
-        "1. Read the job posting text below thoroughly.\n"
-        "2. Extract every technical skill, framework, tool, methodology, platform, and distinct soft skill that is explicitly mentioned or clearly required.\n"
-        "3. For each extracted skill, estimate occurrence_count as the number of times it or a close synonym appears in the posting.\n"
-        "4. Assign every skill to EXACTLY ONE of these canonical categories: {categories}.\n"
-        "5. Do NOT invent skills that are not stated in the posting. Do NOT add vague entries like 'team player' unless explicitly written.\n"
-        "6. Provide the best-guess role_title (e.g. 'Senior Backend Engineer') and seniority level from: Junior, Mid, Senior, Lead, Staff, Principal, Intern, Entry. Leave as null if unclear.\n\n"
+        "1. Read the job description thoroughly and identify its primary domain/industry (e.g., Software Engineering, DevOps, Sales & Business Development, Human Resources, Finance, Healthcare).\n"
+        "2. Dynamically establish 4 to 6 concise, highly relevant skill categories tailored specifically to this role.\n"
+        "   - Examples for Sales: 'Prospecting & Outreach', 'CRM & Pipeline Management', 'Negotiation & Closing', 'Client Relationship', 'Soft Skills'.\n"
+        "   - Examples for DevOps: 'Cloud & Infrastructure', 'CI/CD & Automation', 'Containers & Orchestration', 'Monitoring & Observability', 'Soft Skills'.\n"
+        "   - Examples for Finance: 'Financial Modeling', 'Risk & Compliance', 'Accounting & Auditing', 'Reporting & BI Tools', 'Soft Skills'.\n"
+        "3. Extract all explicit technical skills, domain methodologies, specialized platforms, software tools, and distinct interpersonal soft skills.\n"
+        "4. Assign every extracted skill to EXACTLY ONE of your dynamically formulated categories from step 2.\n"
+        "5. For each extracted skill, estimate occurrence_count as the number of times it or a close synonym appears in the posting.\n"
+        "6. Do NOT invent skills that are not stated in the posting.\n"
+        "7. Provide the best-guess role_title (e.g., 'Enterprise Account Executive', 'Senior DevOps Engineer') and seniority level (Junior, Mid, Senior, Lead, Staff, Principal, Intern, Entry). Leave as null if unclear.\n\n"
         "Formatting rules - obey the Pydantic format strictly:\n"
         "{format_instructions}\n\n"
         "IMPORTANT: Return ONLY the JSON object. No surrounding prose, no markdown fences, no commentary.\n\n"
@@ -64,7 +68,7 @@ skill_extraction_prompt_template = PromptTemplate(
         "=== End job posting text ===\n\n"
         "Your JSON response:"
     ),
-    input_variables=["job_text", "categories", "format_instructions"],
+    input_variables=["job_text", "format_instructions"],
 )
 
 # ==========================================
