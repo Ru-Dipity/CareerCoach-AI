@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_HUB_REPO = "ruhuang1107/careercoach-ai"
-        DOCKER_HUB_CREDENTIALS_ID = "dockerhub-token"
+        DOCKER_HUB_CREDENTIALS_ID = "CareerCoach-Dockerhub"
         IMAGE_TAG = "v${BUILD_NUMBER}"
     }
     stages {
@@ -13,7 +13,7 @@ pipeline {
                     checkout scmGit(
                         branches: [[name: '*/main']], 
                         extensions: [], 
-                        userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/Ru-Dipity/StudyBuddy.git']]
+                        userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/Ru-Dipity/CareerCoach-AI.git']]
                     )
 
                     // 1. 获取最新提交信息
@@ -57,8 +57,8 @@ pipeline {
                             git config user.email "ruhuang1107@gmail.com"
                             git add manifests/deployment.yaml
                             git commit -m "chore(ci): Update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
-                            git pull --rebase https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/StudyBuddy.git main
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/StudyBuddy.git HEAD:main
+                            git pull --rebase https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/CareerCoach-AI.git main
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/CareerCoach-AI.git HEAD:main
                             '''
                         }
                     }
@@ -76,10 +76,10 @@ pipeline {
 
                     stage('Apply Kubernetes & Sync App with ArgoCD') {
                         echo 'Triggering ArgoCD application synchronization...'
-                        kubeconfig(credentialsId: 'kubeconfig', serverUrl: 'https://192.168.49.2:8443') {
+                        kubeconfig(credentialsId: 'k8s-kubeconfig', serverUrl: 'https://172.17.0.1:6443') {
                             sh '''
-                            argocd login 35.224.152.0:31429 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
-                            argocd app sync study
+                            argocd login 51.158.200.195:32290 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
+                            argocd app sync careercoach
                             '''
                         }
                     }

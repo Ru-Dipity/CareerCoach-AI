@@ -218,6 +218,95 @@ Password: The DockerHub token
 ID: gitops-dockerhub
 Description: DockerHub Access Token
 
+
+
+ Step 1: Check Existing Namespaces
+kubectl get namespace
+🆕 Step 2: Create New Namespace for ArgoCD
+kubectl create ns argocd
+✅ Run the first command again to verify the namespace is created.
+
+📦 Step 3: Install ArgoCD
+Apply the ArgoCD installation manifest from GitHub:
+
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+🔍 Step 4: Validate ArgoCD Components
+Check all resources inside the argocd namespace:
+
+kubectl get all -n argocd
+
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
+
+kubectl get svc -n argocd
+
+cat /etc/rancher/k3s/k3s.yaml
+
+ip route show | grep docker0
+
+cp /etc/rancher/k3s/k3s.yaml ./jenkins-k3s.yaml
+打开 ./jenkins-k3s.yaml，将里面的：
+
+server: https://127.0.0.1:6443 修改为 server: https://172.17.0.1:6443 （（以 172.17.0.1 为例）） 
+
+Jenkins 存放 kubeconfig 最标准的凭据类型是 Secret file：
+
+打开浏览器进入 Jenkins 面板。
+
+依次点击：Manage Jenkins -> Credentials -> System -> Global credentials (unrestricted)。
+
+点击右上角 Add Credentials：
+
+Kind: 选择 Secret file。
+
+File: 点击 Choose File 上传刚才修改好的 jenkins-k3s.yaml 文件（或者将其下载到本地电脑后上传）。
+
+ID: 输入一个好记的名字，例如 k8s-kubeconfig（流水线脚本会根据这个 ID 调取）。
+
+Description: 可选填写 K3s Cluster Kubeconfig。
+
+点击 Create 保存。
+
+
+在 Jenkinsfile 流水线中调用
+在 Jenkinsfile 中，使用 withCredentials 注入该配置文件即可：
+
+Connect GitHub Repository to ArgoCD
+Open ArgoCD UI → Go to Settings → Repositories → Connect Repo via HTTPS.
+
+Fill in details:
+
+Type: git
+Name: anything you want
+Project: default
+Repo URL: https://github.com/data-guru0/GitOPS-testing.git
+Username & Password: Provide GitHub username and token (optional but recommended)
+Click Connect.
+
+You should see a success message confirming the GitHub repo is connected to ArgoCD.
+
+kubectl create secret generic groq-api-secret \
+  --from-literal=GROQ_API_KEY="" \
+  -n argocd
+
+Step 4: Create a New Application in ArgoCD
+Go to Applications → Click New App.
+
+Fill in the form:
+
+Name: Gitops (or any name you prefer)
+Project: default
+Sync Policy: Automatic
+Tick Sync Pipeline Resources and Self Heal.
+Leave other settings as default.
+Repository URL: select your connected repo.
+Revision: main (branch)
+Path: manifests
+Cluster URL: select from dropdown.
+Namespace: argocd
+Click Create.
+
+You should see the application status as Synced and Healthy.
+
 ## Feature Descriptions
 
 ### 0. LLM Provider Selection (NEW)
