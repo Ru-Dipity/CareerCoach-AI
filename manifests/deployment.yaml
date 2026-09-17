@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: llmops-app
-        image: ruhuang1107/careercoach-ai:v1
+        image: ruhuang1107/careercoach-ai:v2
         ports:
         - containerPort: 8501
         env:
