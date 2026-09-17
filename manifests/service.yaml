@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: llmops-service
+  name: careercoach-service
 spec:
   selector:
-    app: llmops-app
+    app: careercoach-app
   ports:
     - port: 80
       targetPort: 8501  # default port for Streamlit
