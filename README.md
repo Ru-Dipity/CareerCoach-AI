@@ -144,6 +144,80 @@ kubectl port-forward svc/llmops-service 8501:80
 
 ---
 
+Jenkins installation :
+docker run -d \
+  --name jenkins \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -u root \
+  jenkins/jenkins:lts-jdk21
+
+initialAdminPassword:
+
+docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+Jenkins Setup Steps
+
+Paste the initial password from docker logs jenkins
+Click Install Suggested Plugins
+Create Admin User
+Skip agent security warning (ignore for now)
+Install Required Plugins
+
+Navigate to: Manage Jenkins → Plugins
+Install:
+Docker
+Docker Pipeline
+Kubernetes
+
+
+GitHub Integration with Jenkins
+🔐 Generate GitHub Personal Access Token
+Go to: GitHub → Settings → Developer Settings → Personal access tokens → Generate new token
+
+Select classic token and give it the following permissions:
+
+admin:org
+admin:org_hook
+admin:public_key
+admin:repo_hook
+repo
+workflow
+🔑 Add GitHub Credentials to Jenkins
+Go to: Manage Jenkins → Credentials → Global → Add Credentials
+Username: Your GitHub username
+Password: The token you just generated
+ID: github-token
+Description: github-token
+🚀 Create a New Pipeline Job in Jenkins
+Go to Jenkins Dashboard → New Item
+Enter Name: gitops
+Select Pipeline
+Scroll to the Pipeline section:
+Select Pipeline from SCM
+Choose Git
+Repository URL: Your GitHub repo link
+Credentials: Select the github-token credential
+Branch: main
+
+
+🐳 Create DockerHub Repository
+Go to https://hub.docker.com
+Create a new repository, e.g., lukas7/testing-9
+🔐 Generate DockerHub Access Token
+Go to DockerHub Account → Account Settings → Security → New Access Token
+Name it appropriately and give it Read/Write permission
+Copy the generated token
+➕ Add DockerHub Credentials to Jenkins
+Go to Jenkins → Manage Jenkins → Credentials → Global → Add Credentials
+Username: DockerHub username (e.g., lukas7)
+Password: The DockerHub token
+ID: gitops-dockerhub
+Description: DockerHub Access Token
+
 ## Feature Descriptions
 
 ### 0. LLM Provider Selection (NEW)
