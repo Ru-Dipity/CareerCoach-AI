@@ -74,6 +74,7 @@ pipeline {
                         '''
                     }
 
+
                     stage('Apply Kubernetes & Sync App with ArgoCD') {
                         echo 'Triggering ArgoCD application synchronization...'
                         kubeconfig(credentialsId: 'k8s-kubeconfig', serverUrl: 'https://51.158.200.195:6443') {
