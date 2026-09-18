@@ -36,7 +36,10 @@ The pipeline follows a strict **CI/CD decoupling** model: Jenkins produces artif
 
 ```mermaid
 flowchart LR
-  subgraph CI["🔨 CI — Jenkins"]
+  Dev["👩‍💻 Developer<br/>git push → main"]
+  GH["🐙 GitHub<br/>webhook"]
+
+  subgraph CI["🔨 CI — Jenkins (no cluster access)"]
     J["Jenkins Pipeline<br/>(Jenkinsfile)"]
   end
 
@@ -54,12 +57,13 @@ flowchart LR
 
   K["☸️ Kubernetes Cluster<br/>Deployment + Service"]
 
-  J -->|"1. build & push immutable tag"| D
-  J -->|"2. write-back new image tag"| R
-  R -->|"3. commit [skip ci]"| R
-  A -->|"4. watch / poll Git"| R
-  A -->|"5. declarative sync"| K
-  D -.->|"6. pull image"| K
+  Dev -->|"1. push"| GH
+  GH -->|"2. trigger"| J
+  J -->|"3. build & push immutable tag"| D
+  J -->|"4. write-back new image tag<br/>commit [skip ci]"| R
+  A -->|"5. watch / poll Git"| R
+  A -->|"6. declarative sync"| K
+  K -.->|"7. pull image"| D
 
   click J "Jenkinsfile" "Jenkins pipeline: build, push, commit"
   click R "manifests/deployment.yaml" "K8s manifests stored in Git"
@@ -67,12 +71,13 @@ flowchart LR
 
 ### Workflow — step by step
 
-1. **Trigger** — A `git push` to `main` fires a GitHub webhook → Jenkins pipeline starts.
-2. **Build** — Jenkins builds a multi-stage Docker image tagged `v${BUILD_NUMBER}` (immutable).
-3. **Push** — The image is pushed to Docker Hub (`ruhuang1107/careercoach-ai`).
-4. **Write-back** — Jenkins `sed`-updates the image tag in [`manifests/deployment.yaml`](LLM-Projects/CareerCoach-AI/manifests/deployment.yaml:17) and commits with `[skip ci]`.
+1. **Push** — A developer pushes to `main`.
+2. **Trigger** — GitHub fires a webhook → the Jenkins pipeline starts.
+3. **Build & push** — Jenkins builds a multi-stage Docker image tagged `v${BUILD_NUMBER}` (immutable) and pushes it to Docker Hub (`ruhuang1107/careercoach-ai`).
+4. **Write-back** — Jenkins `sed`-updates the image tag in [`manifests/deployment.yaml`](LLM-Projects/CareerCoach-AI/manifests/deployment.yaml:17) and commits with `[skip ci]`. The pipeline intercepts this commit on the next run and aborts, preventing a trigger loop.
 5. **Reconcile** — Argo CD detects the Git change and syncs the cluster declaratively.
 6. **Self-heal** — Any manual drift in the cluster is automatically reverted to match Git.
+7. **Image pull** — The kubelet pulls the new immutable tag from Docker Hub (a runtime action, not a pipeline stage).
 
 > **Why decoupled?** Jenkins holds *only* Git + registry credentials. It has **no cluster access**. Argo CD holds *only* cluster credentials. A compromise of CI cannot reach production.
 
