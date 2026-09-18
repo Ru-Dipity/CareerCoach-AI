@@ -6,3 +6,24 @@ results/
 .trae/
 .venv/
 __pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.idea/
+.vscode/
+.DS_Store
+# Kubernetes / kubeconfig
+# ignore any local kubeconfig files and Jenkins kubeconfig uploads
+jenkins-k3s.yaml
+.kube/
+# Terraform state
+.terraform/
+*.tfstate
+*.tfstate.*
+# SSH / keys / certificates
+*.pem
+*.key
+# AWS credentials and local SDK files
+.aws/
+# editor swap files
+*~

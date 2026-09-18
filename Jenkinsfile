@@ -16,25 +16,26 @@ pipeline {
                         userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/Ru-Dipity/CareerCoach-AI.git']]
                     )
 
-                    // 1. 获取最新提交信息
+                    // 1. Get the latest commit message
                     def lastCommit = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
                     echo "=========================================="
                     echo "Latest commit message: ${lastCommit}"
                     echo "=========================================="
 
-                    // 2. 拦截检查：如果是自动回写提交，直接在这里 return 退出当前构建，后续代码全部不执行！
+                    // 2. Intercept check: prevent the pipeline from self-triggering a loop
                     if (lastCommit.contains('[skip ci]') || lastCommit.contains('chore(ci): Update image tag')) {
                         echo ">>> Intercepted automated commit. Aborting execution immediately to prevent loop! <<<"
                         currentBuild.result = 'SUCCESS'
-                        return // 直接在这里退出，后面的所有步骤统统不跑！
+                        return 
                     }
 
-                    // 3. 真正的 CI/CD 流程（只有正常业务提交才会走到这里）
+                    // 3. Build the Docker image
                     stage('Build Docker Image') {
                         echo "Building Docker container image: ${DOCKER_HUB_REPO}:${IMAGE_TAG}..."
                         dockerImage = docker.build("${DOCKER_HUB_REPO}:${IMAGE_TAG}")
                     }
 
+                    // 4. Push the image to Docker Hub
                     stage('Push Image to DockerHub') {
                         echo 'Pushing Docker image to DockerHub registry...'
                         docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_HUB_CREDENTIALS_ID}") {
@@ -42,6 +43,7 @@ pipeline {
                         }
                     }
 
+                    // 5. Update the image tag in local manifests
                     stage('Update Deployment YAML with New Tag') {
                         echo "Updating manifests/deployment.yaml with new image tag: ${IMAGE_TAG}"
                         sh """
@@ -49,6 +51,7 @@ pipeline {
                         """
                     }
 
+                    // 6. Commit updated manifests back to GitHub (triggers Argo CD auto-deploy)
                     stage('Commit Updated YAML') {
                         echo 'Committing and pushing updated deployment manifests back to repository...'
                         withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
@@ -59,28 +62,6 @@ pipeline {
                             git commit -m "chore(ci): Update image tag to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
                             git pull --rebase https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/CareerCoach-AI.git main
                             git push https://${GIT_USER}:${GIT_PASS}@github.com/Ru-Dipity/CareerCoach-AI.git HEAD:main
-                            '''
-                        }
-                    }
-
-                    stage('Install Kubectl & ArgoCD CLI Setup') {
-                        echo 'Installing Kubectl and ArgoCD CLI binaries...'
-                        sh '''
-                        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                        chmod +x kubectl
-                        mv kubectl /usr/local/bin/kubectl
-                        curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-                        chmod +x /usr/local/bin/argocd
-                        '''
-                    }
-
-
-                    stage('Apply Kubernetes & Sync App with ArgoCD') {
-                        echo 'Triggering ArgoCD application synchronization...'
-                        kubeconfig(credentialsId: 'k8s-kubeconfig', serverUrl: 'https://51.158.200.195:6443') {
-                            sh '''
-                            argocd login 51.158.200.195:32290 --username admin --password $(kubectl get secret -n argocd argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) --insecure
-                            argocd app sync careercoach
                             '''
                         }
                     }
