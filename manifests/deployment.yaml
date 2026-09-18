@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: careercoach-app
-        image: ruhuang1107/careercoach-ai:v11
+        image: ruhuang1107/careercoach-ai:v13
         ports:
         - containerPort: 8501
         env:
